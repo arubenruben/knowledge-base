@@ -4,6 +4,10 @@ ARG NODE_VERSION
 FROM composer:latest AS composer
 
 FROM php:${PHP_VERSION}-fpm
+
+# Re-declare ARG after FROM to make it available in this stage
+ARG NODE_VERSION
+
 # Set the working directory to Laravel standard location
 WORKDIR /var/www
 
@@ -47,14 +51,14 @@ RUN curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash - && \
     apt-get install -y nodejs
 
 # Copy 
-COPY ./dev.sh /usr/local/bin/dev.sh
+COPY ./php-fpm/dev.sh /usr/local/bin/dev.sh
 RUN chmod +x /usr/local/bin/dev.sh
 
 # Copy production script
-COPY ./prod.sh /usr/local/bin/prod.sh
+COPY ./php-fpm/prod.sh /usr/local/bin/prod.sh
 RUN chmod +x /usr/local/bin/prod.sh
 
 # Copy PHP-FPM configuration
-COPY ./www.conf /usr/local/etc/php-fpm.d/www.conf
+COPY ./php-fpm/www.conf /usr/local/etc/php-fpm.d/www.conf
 
 EXPOSE 9000

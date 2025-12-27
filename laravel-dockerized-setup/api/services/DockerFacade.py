@@ -107,6 +107,11 @@ class DockerFacade:
                 php_fpm_dest = os.path.join(project_path, "php-fpm")
                 shutil.copytree(PHP_FPM_DIR, php_fpm_dest)
 
+                # Copy the dev.docker-compose.yml to the project directory
+                compose_src = os.path.join(DOCKER_DIR, "dev.docker-compose.yml")
+                compose_dest = os.path.join(project_path, "dev.docker-compose.yml")
+                shutil.copyfile(compose_src, compose_dest)
+
                 with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
                     for root, _, files in os.walk(project_path):
                         for file in files:
