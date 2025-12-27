@@ -9,7 +9,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: laravel-dockerized-setup
+  IMAGE_NAME: ${{ github.repository }}/laravel-dockerized-setup
 
 jobs:
   build-and-push:
@@ -42,8 +42,8 @@ jobs:
         if: github.ref == 'refs/heads/develop'
         uses: docker/build-push-action@v5
         with:
-          context: ./laravel-dockerized-setup/api
-          file: ./laravel-dockerized-setup/api/Dockerfile
+          context: ./api
+          file: ./api/Dockerfile
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
           labels: ${{ steps.meta.outputs.labels }}
@@ -54,8 +54,8 @@ jobs:
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
         uses: docker/build-push-action@v5
         with:
-          context: ./laravel-dockerized-setup/api
-          file: ./laravel-dockerized-setup/api/Dockerfile
+          context: ./api
+          file: ./api/Dockerfile
           push: true
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
