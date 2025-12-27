@@ -43,16 +43,16 @@ RUN curl -o /usr/local/bin/php-fpm-healthcheck \
     && chmod +x /usr/local/bin/php-fpm-healthcheck
 
 # Install Node 24
-RUN curl -fsSL https://deb.nodesource.com/setup_24.x | bash - && \
+RUN curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash - && \
     apt-get install -y nodejs
 
 # Copy 
-COPY ./dev.sh .
-RUN chmod +x ./dev.sh
+COPY ./dev.sh /usr/local/bin/dev.sh
+RUN chmod +x /usr/local/bin/dev.sh
 
 # Copy production script
-COPY ./prod.sh .
-RUN chmod +x ./prod.sh
+COPY ./prod.sh /usr/local/bin/prod.sh
+RUN chmod +x /usr/local/bin/prod.sh
 
 # Copy PHP-FPM configuration
 COPY ./www.conf /usr/local/etc/php-fpm.d/www.conf

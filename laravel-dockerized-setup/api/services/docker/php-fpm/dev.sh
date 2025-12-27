@@ -29,8 +29,11 @@ find /var/www -type d -exec chmod 755 {} \;
 chmod -R 775 /var/www/storage
 chmod -R 775 /var/www/bootstrap/cache
 chmod +x /var/www/artisan
-chmod +x /var/www/dev.sh
-chmod +x /var/www/prod.sh
+chmod +x /usr/local/bin/dev.sh
+chmod +x /usr/local/bin/prod.sh
+
+# Install Vite globally if not already installed
+npm install -g vite
 
 # Always install dependencies to ensure they exist in volumes
 echo "Installing npm dependencies..."
