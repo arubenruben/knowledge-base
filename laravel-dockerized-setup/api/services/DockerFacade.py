@@ -1,4 +1,5 @@
 import os
+import shutil
 import zipfile
 import tempfile
 import subprocess
@@ -6,13 +7,15 @@ from fastapi import HTTPException
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 DOCKER_DIR = os.path.join(CURRENT_DIR, "docker")
+NGINX_DIR = os.path.join(DOCKER_DIR, "nginx")
+PHP_FPM_DIR = os.path.join(DOCKER_DIR, "php-fpm")
 
 
 class DockerFacade:
     @staticmethod
     def build_docker_image(
         app_name: str, php_version: str, node_version: int, instructions: str
-    ):
+    ) -> str:
         # Verify if "./docker/laravel" directory exists
         dockerfile_path = os.path.join(DOCKER_DIR, "laravel")
 
@@ -79,6 +82,7 @@ class DockerFacade:
 
                 # Verify the Laravel project was created
                 project_path = os.path.join(temp_dir, app_name)
+
                 try:
                     created_files = os.listdir(project_path)
                     print(
@@ -94,14 +98,22 @@ class DockerFacade:
                 zip_filename = f"{app_name}.zip"
                 zip_path = os.path.join(tempfile.gettempdir(), zip_filename)
 
+                # TODO: Add Nginx and php-fpm configuration files to the project directory here
+                # Copy Nginx folder to a new 'nginx' folder inside the project directory
+                nginx_dest = os.path.join(project_path, "nginx")
+                shutil.copytree(NGINX_DIR, nginx_dest)
+
+                # Copy PHP-FPM folder to a new 'php-fpm' folder inside the project directory
+                php_fpm_dest = os.path.join(project_path, "php-fpm")
+                shutil.copytree(PHP_FPM_DIR, php_fpm_dest)
+
                 with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
-                    for root, dirs, files in os.walk(project_path):
+                    for root, _, files in os.walk(project_path):
                         for file in files:
                             file_path = os.path.join(root, file)
                             arcname = os.path.relpath(file_path, temp_dir)
                             zipf.write(file_path, arcname)
 
-                print(f"Created zip file at: {zip_path}")
                 return zip_path
 
         except subprocess.CalledProcessError as e:

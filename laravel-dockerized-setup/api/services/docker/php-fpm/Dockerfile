@@ -1,7 +1,9 @@
+ARG PHP_VERSION
+ARG NODE_VERSION
+
 FROM composer:latest AS composer
 
-FROM php:8.4-fpm
-
+FROM php:${PHP_VERSION}-fpm
 # Set the working directory to Laravel standard location
 WORKDIR /var/www
 

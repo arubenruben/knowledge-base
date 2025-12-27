@@ -5,7 +5,16 @@ from api.services.DockerFacade import DockerFacade
 router = APIRouter(prefix="/v1", tags=["v1"])
 
 
-@router.get("/download")
+@router.get(
+    "/download",
+    response_class=FileResponse,
+    responses={
+        200: {
+            "content": {"application/zip": {}},
+            "description": "Returns a zip file containing the Laravel project",
+        }
+    },
+)
 async def download_laravel(
     app_name: str = Query(..., description="Application name"),
     php_version: str = Query(..., description="PHP version"),
@@ -35,10 +44,10 @@ async def download_laravel(
         node_version=node_version,
         instructions=instructions,
     )
-    
+
     return FileResponse(
         path=zip_path,
         media_type="application/zip",
         filename=f"{app_name}.zip",
-        headers={"Content-Disposition": f"attachment; filename={app_name}.zip"}
+        headers={"Content-Disposition": f"attachment; filename={app_name}.zip"},
     )
