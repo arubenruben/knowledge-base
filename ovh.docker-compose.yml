@@ -54,6 +54,8 @@ services:
     command: prefect server start --no-services
     ports:
       - "4200:4200"
+    networks:
+      - prefect-network
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://localhost:4200/api/health', timeout=1)"]
       interval: 30s
@@ -88,3 +90,7 @@ services:
 volumes:
   postgres_data:
   redis_data:
+
+networks:
+  prefect-network:
+    driver: bridge
