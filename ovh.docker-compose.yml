@@ -65,6 +65,8 @@ services:
 
   prefect-services:
     image: prefecthq/prefect:3-latest
+    networks:
+      - prefect-network
     depends_on:
       prefect-server:
         condition: service_healthy
@@ -79,6 +81,8 @@ services:
 
   prefect-worker:
     image: prefecthq/prefect:3-latest
+    networks:
+      - prefect-network
     depends_on:
       prefect-server:
         condition: service_healthy
