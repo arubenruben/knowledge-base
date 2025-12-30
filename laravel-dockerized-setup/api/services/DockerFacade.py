@@ -112,6 +112,11 @@ class DockerFacade:
                 compose_dest = os.path.join(project_path, "dev.docker-compose.yml")
                 shutil.copyfile(compose_src, compose_dest)
 
+                # Copy the template.docker-compose.yml to the project directory
+                compose_src = os.path.join(DOCKER_DIR, "template.docker-compose.yml")
+                compose_dest = os.path.join(project_path, "template.docker-compose.yml")
+                shutil.copyfile(compose_src, compose_dest)
+
                 with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
                     for root, _, files in os.walk(project_path):
                         for file in files:
