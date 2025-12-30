@@ -52,6 +52,8 @@ services:
       PREFECT_REDIS_MESSAGING_HOST: redis
       PREFECT_REDIS_MESSAGING_PORT: 6379
       PREFECT_REDIS_MESSAGING_DB: 0
+      # Basic Authentication
+      PREFECT_SERVER_API_AUTH_STRING: ${PREFECT_AUTH_STRING}
     command: prefect server start --no-services
     ports:
       - "4200:4200"
@@ -74,6 +76,8 @@ services:
       PREFECT_REDIS_MESSAGING_HOST: redis
       PREFECT_REDIS_MESSAGING_PORT: 6379
       PREFECT_REDIS_MESSAGING_DB: 0
+      # Basic Authentication
+      PREFECT_API_AUTH_STRING: ${PREFECT_AUTH_STRING}
     command: prefect server services start
 
   prefect-worker:
@@ -83,6 +87,8 @@ services:
         condition: service_healthy
     environment:
       PREFECT_API_URL: http://prefect-server:4200/api
+      # Basic Authentication
+      PREFECT_API_AUTH_STRING: ${PREFECT_AUTH_STRING}
     command: prefect worker start --pool local-pool
     restart: on-failure
 
