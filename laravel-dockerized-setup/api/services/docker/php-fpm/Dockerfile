@@ -1,5 +1,6 @@
 ARG PHP_VERSION
 ARG NODE_VERSION
+ARG LARAVEL_ENV_ENCRYPTION_KEY
 
 FROM composer:latest AS composer
 
@@ -7,6 +8,10 @@ FROM php:${PHP_VERSION}-fpm
 
 # Re-declare ARG after FROM to make it available in this stage
 ARG NODE_VERSION
+ARG LARAVEL_ENV_ENCRYPTION_KEY
+
+# Set Laravel encryption key environment variable
+ENV LARAVEL_ENV_ENCRYPTION_KEY=${LARAVEL_ENV_ENCRYPTION_KEY}
 
 # Set the working directory to Laravel standard location
 WORKDIR /var/www
@@ -60,5 +65,19 @@ RUN chmod +x /usr/local/bin/prod.sh
 
 # Copy PHP-FPM configuration
 COPY ./php-fpm/www.conf /usr/local/etc/php-fpm.d/www.conf
+
+# Copy application source code
+COPY --chown=www-data:www-data . /var/www
+
+# Set proper permissions
+RUN mkdir -p /var/www/storage/app/public \
+    /var/www/storage/framework/cache \
+    /var/www/storage/framework/sessions \
+    /var/www/storage/framework/testing \
+    /var/www/storage/framework/views \
+    /var/www/storage/logs \
+    /var/www/bootstrap/cache \
+    && chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache \
+    && chmod -R 775 /var/www/storage /var/www/bootstrap/cache
 
 EXPOSE 9000

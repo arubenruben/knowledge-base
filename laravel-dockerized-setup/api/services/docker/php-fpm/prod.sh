@@ -11,6 +11,7 @@ if [ ! -f "artisan" ]; then
     exit 1
 fi
 
+
 # Create Laravel directories if they don't exist
 echo "Creating Laravel directories..."
 mkdir -p /var/www/storage/app/public \
@@ -65,11 +66,38 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
+# Decrypt production environment file if encrypted version exists
+if [ -f ".env.production.encrypted" ]; then
+    echo "Decrypting production environment file..."
+    if [ -z "$LARAVEL_ENV_ENCRYPTION_KEY" ]; then
+        echo "Error: LARAVEL_ENV_ENCRYPTION_KEY is not set. Cannot decrypt environment file."
+        exit 1
+    fi
+    php artisan env:decrypt --env=production --key="$LARAVEL_ENV_ENCRYPTION_KEY" --force
+    if [ $? -ne 0 ]; then
+        echo "Error: Failed to decrypt environment file"
+        exit 1
+    fi
+    echo "Environment file decrypted successfully"
+else
+    echo "No encrypted environment file found, using existing .env.production if available"
+fi
+
+# Migrate .env.production to .env
+if [ -f ".env.production" ]; then
+    echo "Setting up production environment file..."
+    cp .env.production .env
+else
+    echo "Warning: .env.production file not found. Make sure to set up your environment variables."
+fi
+
 # Cache Laravel configuration for production
 echo "Optimizing Laravel for production..."
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
+
+php artisan migrate --force
 
 echo "Production environment setup completed!"
 echo "Ready to serve Laravel application in production mode."

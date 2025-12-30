@@ -6,6 +6,8 @@ services:
     restart: unless-stopped
     ports:
       - "8002:8000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - laravel-dockerized-network
     healthcheck:

@@ -1,0 +1,110 @@
+# ============================================================================
+# DOCKER COMPOSE TEMPLATE
+# ============================================================================
+# This template provides a production-ready setup for a Laravel application
+# with PHP-FPM, NGINX, and PostgreSQL.
+#
+# INSTRUCTIONS:
+# 1. Replace "myapp" with your application name throughout this file
+# 2. Update image references to point to your container registry
+# 3. Configure your .env file with database credentials
+# 4. Adjust port mappings as needed for your environment
+# ============================================================================
+
+version: "3"
+
+services:
+  # PHP-FPM Service - Runs your Laravel application
+  myapp-fpm:
+    # TODO: Replace with your application image from your container registry
+    image: ghcr.io/your-org/your-app-name:stable
+    container_name: myapp-fpm
+    restart: unless-stopped
+    entrypoint: ["/bin/sh", "-c", "/usr/local/bin/prod.sh"]
+    environment:
+      - LARAVEL_ENV_ENCRYPTION_KEY=${LARAVEL_ENV_ENCRYPTION_KEY}
+      - DB_CONNECTION=pgsql
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_DATABASE=${POSTGRES_DB:-myapp_db}
+      - DB_USERNAME=${POSTGRES_USER:-myapp_user}
+      - DB_PASSWORD=${POSTGRES_PASSWORD:-change_this_password}
+    networks:
+      - app_internal_network
+      - app_network
+    ports:
+      - "9000:9000"    
+    volumes:
+      - app_public:/var/www/public
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "php-fpm-healthcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # NGINX Service - Web server and reverse proxy
+  myapp-nginx:
+    # TODO: Replace with your NGINX image from your container registry
+    image: ghcr.io/your-org/your-nginx-image:stable
+    container_name: myapp_nginx_service
+    restart: unless-stopped
+    networks:
+      - app_network
+    ports:
+      - "8080:80"  # TODO: Change to 80:80 for production
+    environment:
+      - PHP_FPM_HOST=myapp-fpm
+      - PHP_FPM_PORT=9000
+    volumes:
+      - app_public:/var/www/public:ro
+    depends_on:
+      myapp-fpm:
+        condition: service_healthy
+
+  # Database Service (PostgreSQL/MySQL/MariaDB)
+  db:
+    # TODO: Choose your database - postgres:17, mysql:8, mariadb:10.11
+    image: <<DATABASE_IMAGE_HERE>>
+    container_name: db_service
+    restart: unless-stopped    
+    networks:      
+      - app_internal_network
+    environment:
+      - <<DATABASE_ENV_VARS_HERE>>
+    volumes:
+      - app_db:<<DATABASE_VOLUME_OPTIONS_HERE>>
+    healthcheck:
+      # TODO: Update for your database type
+      # PostgreSQL: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-myapp_user}"]
+      # MySQL: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: [<<DATABASE_HEALTHCHECK_HERE>>]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  app_network:
+    driver: bridge
+  app_internal_network:
+    driver: bridge
+    internal: true
+    
+volumes:
+  app_db:
+    driver: local
+  app_public:
+    driver: local
+
+# ============================================================================
+# ENVIRONMENT VARIABLES (.env file)
+# ============================================================================
+# Create a .env file in the same directory with:
+#
+# LARAVEL_ENV_ENCRYPTION_KEY=your-encryption-key-here
+# POSTGRES_DB=myapp_db
+# POSTGRES_USER=myapp_user
+# POSTGRES_PASSWORD=your_secure_password_here
+# ============================================================================
