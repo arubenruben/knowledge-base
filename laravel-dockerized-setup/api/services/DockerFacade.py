@@ -36,11 +36,14 @@ class DockerFacade:
         try:
             with tempfile.TemporaryDirectory() as temp_dir:
                 # Convert Windows path to Docker-compatible format
-                docker_volume_path = temp_dir.replace("\\", "/")
-                if len(docker_volume_path) > 1 and docker_volume_path[1:3] == ":/":
-                    docker_volume_path = (
-                        f"/{docker_volume_path[0].lower()}{docker_volume_path[2:]}"
-                    )
+                if os.name == "nt":
+                    docker_volume_path = temp_dir.replace("\\", "/")
+                    if len(docker_volume_path) > 1 and docker_volume_path[1:3] == ":/":
+                        docker_volume_path = (
+                            f"/{docker_volume_path[0].lower()}{docker_volume_path[2:]}"
+                        )
+                else:
+                    docker_volume_path = temp_dir
 
                 # First, build the Docker image from the current directory
                 subprocess.run(
