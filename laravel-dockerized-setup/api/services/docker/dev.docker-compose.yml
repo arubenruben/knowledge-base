@@ -16,7 +16,7 @@ services:
       - "5173:5173"
     volumes:
       - ./:/var/www
-      - ./api/services/docker/php-fpm/vite.config.ts:/var/www/vite.config.ts
+      - ./php-fpm/vite.config.ts:/var/www/vite.config.ts
     depends_on:
       db:
         condition: service_healthy
