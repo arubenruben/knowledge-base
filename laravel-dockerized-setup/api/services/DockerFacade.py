@@ -117,6 +117,27 @@ class DockerFacade:
                 compose_dest = os.path.join(project_path, "template.docker-compose.yml")
                 shutil.copyfile(compose_src, compose_dest)
 
+                # Merge the content, without erasing the existing in .github folder with the project .github folder
+                github_src = os.path.join(DOCKER_DIR, ".github")
+                github_dest = os.path.join(project_path, ".github")
+
+                if os.path.isdir(github_src):
+                    if not os.path.isdir(github_dest):
+                        shutil.copytree(github_src, github_dest)
+                    else:
+                        for root, dirs, files in os.walk(github_src):
+                            rel_path = os.path.relpath(root, github_src)
+                            dest_path = os.path.join(github_dest, rel_path)
+                            os.makedirs(dest_path, exist_ok=True)
+                            for file in files:
+                                shutil.copy2(
+                                    os.path.join(root, file),
+                                    os.path.join(dest_path, file),
+                                )
+                else:
+                    # If the source .github directory does not exist, copy it directly
+                    shutil.copytree(github_src, github_dest)
+
                 with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
                     for root, _, files in os.walk(project_path):
                         for file in files:
