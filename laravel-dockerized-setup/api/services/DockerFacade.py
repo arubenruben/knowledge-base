@@ -1,5 +1,4 @@
 import os
-import time
 import shutil
 import zipfile
 import tempfile
@@ -37,14 +36,11 @@ class DockerFacade:
         try:
             with tempfile.TemporaryDirectory() as temp_dir:
                 # Convert Windows path to Docker-compatible format
-                if os.name == "nt":
-                    docker_volume_path = temp_dir.replace("\\", "/")
-                    if len(docker_volume_path) > 1 and docker_volume_path[1:3] == ":/":
-                        docker_volume_path = (
-                            f"/{docker_volume_path[0].lower()}{docker_volume_path[2:]}"
-                        )
-                else:
-                    docker_volume_path = os.path.abspath(temp_dir)
+                docker_volume_path = temp_dir.replace("\\", "/")
+                if len(docker_volume_path) > 1 and docker_volume_path[1:3] == ":/":
+                    docker_volume_path = (
+                        f"/{docker_volume_path[0].lower()}{docker_volume_path[2:]}"
+                    )
 
                 # First, build the Docker image from the current directory
                 subprocess.run(
@@ -65,48 +61,21 @@ class DockerFacade:
                     cwd=dockerfile_path,
                 )
 
-                # Run the container WITHOUT volume mount (for Docker-in-Docker compatibility)
-                # We'll use docker cp to extract files instead
-                container_name = f"laravel-builder-{app_name}-{int(time.time() * 1000)}"
-                
-                docker_cmd = [
-                    "docker",
-                    "run",
-                    "--name", container_name,
-                    "-e",
-                    f"APP_NAME={app_name}",
-                    "-e",
-                    f"INSTRUCTIONS={instructions}",
-                    "laravel-dockerized-setup",
-                ]
-                
-                print(f"Running Docker command: {' '.join(docker_cmd)}")
-                print(f"Container name: {container_name}")
-                
+                # Then run the container with the built image
                 result = subprocess.run(
-                    docker_cmd,
-                    check=True,
-                    capture_output=True,
-                    text=True,
-                )
-                
-                # Copy files from container to temp directory
-                print(f"Copying files from container {container_name} to {temp_dir}")
-                copy_result = subprocess.run(
                     [
                         "docker",
-                        "cp",
-                        f"{container_name}:/app/out/{app_name}",
-                        temp_dir,
+                        "run",
+                        "--rm",
+                        "-e",
+                        f"APP_NAME={app_name}",
+                        "-e",
+                        f"INSTRUCTIONS={instructions}",
+                        "-v",
+                        f"{docker_volume_path}:/app/out",
+                        "laravel-dockerized-setup",
                     ],
                     check=True,
-                    capture_output=True,
-                    text=True,
-                )
-                
-                # Remove the container
-                subprocess.run(
-                    ["docker", "rm", "-f", container_name],
                     capture_output=True,
                     text=True,
                 )
@@ -114,49 +83,22 @@ class DockerFacade:
                 # Verify the Laravel project was created
                 project_path = os.path.join(temp_dir, app_name)
 
-                # Debug: List contents of temp_dir
-                try:
-                    temp_contents = os.listdir(temp_dir)
-                    print(f"Contents of temp_dir ({temp_dir}): {temp_contents}")
-                except Exception as e:
-                    print(f"Error listing temp_dir: {e}")
-
-                # Wait a moment for filesystem sync on Linux
-                time.sleep(1)
-
-                if not os.path.exists(project_path):
-                    # List what's actually in temp_dir for debugging
-                    try:
-                        temp_contents = os.listdir(temp_dir)
-                        raise HTTPException(
-                            status_code=400,
-                            detail=f"Laravel project directory not found at {project_path}. "
-                            f"Temp dir ({temp_dir}) contains: {temp_contents}. "
-                            f"Docker output: {result.stdout}",
-                        )
-                    except OSError as e:
-                        raise HTTPException(
-                            status_code=400,
-                            detail=f"Failed to access temp directory {temp_dir}: {str(e)}. "
-                            f"Docker output: {result.stdout}",
-                        )
-
                 try:
                     created_files = os.listdir(project_path)
                     print(
                         f"Created {len(created_files)} files in the Laravel project directory."
                     )
-                except FileNotFoundError as e:
+                except FileNotFoundError:
                     raise HTTPException(
                         status_code=400,
-                        detail=f"Laravel project directory not found at {project_path}: {str(e)}. "
-                        f"Docker output: {result.stdout}",
+                        detail=f"Laravel project directory not found. Docker output: {result.stdout}",
                     )
 
                 # Create a zip file of the Laravel project
                 zip_filename = f"{app_name}.zip"
                 zip_path = os.path.join(tempfile.gettempdir(), zip_filename)
 
+                # TODO: Add Nginx and php-fpm configuration files to the project directory here
                 # Copy Nginx folder to a new 'nginx' folder inside the project directory
                 nginx_dest = os.path.join(project_path, "nginx")
                 shutil.copytree(NGINX_DIR, nginx_dest)
