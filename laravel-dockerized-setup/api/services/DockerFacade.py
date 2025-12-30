@@ -44,7 +44,7 @@ class DockerFacade:
                             f"/{docker_volume_path[0].lower()}{docker_volume_path[2:]}"
                         )
                 else:
-                    docker_volume_path = temp_dir
+                    docker_volume_path = os.path.abspath(temp_dir)
 
                 # First, build the Docker image from the current directory
                 subprocess.run(
@@ -65,21 +65,48 @@ class DockerFacade:
                     cwd=dockerfile_path,
                 )
 
-                # Then run the container with the built image
+                # Run the container WITHOUT volume mount (for Docker-in-Docker compatibility)
+                # We'll use docker cp to extract files instead
+                container_name = f"laravel-builder-{app_name}-{int(time.time() * 1000)}"
+                
+                docker_cmd = [
+                    "docker",
+                    "run",
+                    "--name", container_name,
+                    "-e",
+                    f"APP_NAME={app_name}",
+                    "-e",
+                    f"INSTRUCTIONS={instructions}",
+                    "laravel-dockerized-setup",
+                ]
+                
+                print(f"Running Docker command: {' '.join(docker_cmd)}")
+                print(f"Container name: {container_name}")
+                
                 result = subprocess.run(
+                    docker_cmd,
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                )
+                
+                # Copy files from container to temp directory
+                print(f"Copying files from container {container_name} to {temp_dir}")
+                copy_result = subprocess.run(
                     [
                         "docker",
-                        "run",
-                        "--rm",
-                        "-e",
-                        f"APP_NAME={app_name}",
-                        "-e",
-                        f"INSTRUCTIONS={instructions}",
-                        "-v",
-                        f"{docker_volume_path}:/app/out",
-                        "laravel-dockerized-setup",
+                        "cp",
+                        f"{container_name}:/app/out/{app_name}",
+                        temp_dir,
                     ],
                     check=True,
+                    capture_output=True,
+                    text=True,
+                )
+                
+                # Remove the container
+                subprocess.run(
+                    ["docker", "rm", "-f", container_name],
                     capture_output=True,
                     text=True,
                 )
