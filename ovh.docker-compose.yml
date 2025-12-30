@@ -18,6 +18,8 @@ services:
       POSTGRES_USER: prefect
       POSTGRES_PASSWORD: prefect
       POSTGRES_DB: prefect
+    networks:
+      - prefect-network
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -28,6 +30,8 @@ services:
 
   redis:
     image: redis:7
+    networks:
+      - prefect-network
     volumes:
       - redis_data:/data
     healthcheck:
