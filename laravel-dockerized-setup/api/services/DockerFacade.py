@@ -1,4 +1,5 @@
 import os
+import time
 import shutil
 import zipfile
 import tempfile
@@ -86,22 +87,49 @@ class DockerFacade:
                 # Verify the Laravel project was created
                 project_path = os.path.join(temp_dir, app_name)
 
+                # Debug: List contents of temp_dir
+                try:
+                    temp_contents = os.listdir(temp_dir)
+                    print(f"Contents of temp_dir ({temp_dir}): {temp_contents}")
+                except Exception as e:
+                    print(f"Error listing temp_dir: {e}")
+
+                # Wait a moment for filesystem sync on Linux
+                time.sleep(1)
+
+                if not os.path.exists(project_path):
+                    # List what's actually in temp_dir for debugging
+                    try:
+                        temp_contents = os.listdir(temp_dir)
+                        raise HTTPException(
+                            status_code=400,
+                            detail=f"Laravel project directory not found at {project_path}. "
+                            f"Temp dir ({temp_dir}) contains: {temp_contents}. "
+                            f"Docker output: {result.stdout}",
+                        )
+                    except OSError as e:
+                        raise HTTPException(
+                            status_code=400,
+                            detail=f"Failed to access temp directory {temp_dir}: {str(e)}. "
+                            f"Docker output: {result.stdout}",
+                        )
+
                 try:
                     created_files = os.listdir(project_path)
                     print(
                         f"Created {len(created_files)} files in the Laravel project directory."
                     )
-                except FileNotFoundError:
+                except FileNotFoundError as e:
                     raise HTTPException(
                         status_code=400,
-                        detail=f"Laravel project directory not found. Docker output: {result.stdout}",
+                        detail=f"Laravel project directory not found at {project_path}: {str(e)}. "
+                        f"Docker output: {result.stdout}",
                     )
 
                 # Create a zip file of the Laravel project
                 zip_filename = f"{app_name}.zip"
                 zip_path = os.path.join(tempfile.gettempdir(), zip_filename)
 
-                # TODO: Add Nginx and php-fpm configuration files to the project directory here
                 # Copy Nginx folder to a new 'nginx' folder inside the project directory
                 nginx_dest = os.path.join(project_path, "nginx")
                 shutil.copytree(NGINX_DIR, nginx_dest)
