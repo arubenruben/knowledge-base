@@ -6,7 +6,7 @@ services:
       # These ports are in format <host-port>:<container-port>
       - '80:80' # Public HTTP Port
       - '443:443' # Public HTTPS Port
-      - '81:81' # Admin Web Port
+      - '127.0.0.1:81:81' # Admin Web Port (localhost only - access via SSH tunnel)
       # Add any other Stream port you want to expose
       # - '21:21' # FTP
     environment:
@@ -14,9 +14,9 @@ services:
       # Postgres parameters:
       DB_POSTGRES_HOST: 'db-nginx-proxy-manager'
       DB_POSTGRES_PORT: '5432'
-      DB_POSTGRES_USER: 'npm'
-      DB_POSTGRES_PASSWORD: 'npmpass'
-      DB_POSTGRES_NAME: 'npm'
+      DB_POSTGRES_USER: ${DB_POSTGRES_USER:-'npm'}
+      DB_POSTGRES_PASSWORD: ${DB_POSTGRES_PASSWORD:-'npmpass'}
+      DB_POSTGRES_NAME: ${DB_POSTGRES_NAME:-'npm'}
       # Uncomment this if IPv6 is not enabled on your host
       # DISABLE_IPV6: 'true'
     volumes:
@@ -31,9 +31,9 @@ services:
     container_name: db-nginx-proxy-manager
     restart: unless-stopped
     environment:
-      POSTGRES_USER: 'npm'
-      POSTGRES_PASSWORD: 'npmpass'
-      POSTGRES_DB: 'npm'
+      POSTGRES_USER: ${DB_POSTGRES_USER:-'npm'}
+      POSTGRES_PASSWORD: ${DB_POSTGRES_PASSWORD:-'npmpass'}
+      POSTGRES_DB: ${DB_POSTGRES_NAME:-'npm'}
     volumes:
       - ./postgresql:/var/lib/postgresql
     healthcheck:
